@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signup - Homemade Pickles & Snacks</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #E6F2FF; margin: 0; padding: 0; }
+    header, footer { background-color: #2E8B57; color: white; text-align: center; padding: 1rem; }
+    nav { background-color: #B0E0E6; padding: 0.5rem; text-align: center; }
+    nav a { margin: 0 15px; text-decoration: none; color: #2E8B57; font-weight: bold; }
+    .signup-box { background-color: #ffffff; width: 320px; margin: 3rem auto; padding: 2rem; border-radius: 10px; box-shadow: 2px 2px 10px #b0e0e6; }
+    .signup-box h2 { text-align: center; color: #2E8B57; }
+    .signup-box label { display: block; margin-top: 1rem; color: #315a7d; }
+    .signup-box input[type="text"],
+    .signup-box input[type="email"],
+    .signup-box input[type="password"] {
+      width: 100%; padding: 0.5rem; margin-top: 0.3rem;
+      border: 1px solid #b0e0e6; border-radius: 5px; box-sizing: border-box;
+    }
+    .signup-box input[type="submit"] {
+      background-color: #4682B4; color: white; border: none; padding: 0.7rem; width: 100%;
+      margin-top: 1.5rem; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s;
+    }
+    .signup-box input[type="submit"]:hover { background-color: #315a7d; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Homemade Pickles & Snacks</h1>
+  </header>
+
+  <nav>
+    <a href="/home">Home</a>
+    <a href="/login">Login</a>
+    <a href="/about">About</a>
+    <a href="/contact">Contact</a>
+  </nav>
+
+  <div class="signup-box">
+    <h2>Create an Account</h2>
+    <form action="/signup" method="post" onsubmit="return validateSignup()">
+      <label for="fullname">Full Name</label>
+      <input type="text" id="fullname" name="fullname" required pattern="[A-Za-z ]{3,}" title="Full name must be at least 3 letters" />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" title="Enter a valid email address" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required pattern=".{6,}" title="Password must be at least 6 characters" />
+
+      <label for="confirm_password">Confirm Password</label>
+      <input type="password" id="confirm_password" name="confirm_password" required pattern=".{6,}" title="Password must be at least 6 characters" />
+
+      <input type="submit" value="Sign Up" />
+    </form>
+    <script>
+      function validateSignup() {
+        const name = document.getElementById('fullname').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm_password').value;
+        const nameRegex = /^[A-Za-z ]{3,}$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const passRegex = /^.{6,}$/;
+        if (!nameRegex.test(name)) {
+          alert('Full name must be at least 3 letters');
+          return false;
+        }
+        if (!emailRegex.test(email)) {
+          alert('Enter a valid email address');
+          return false;
+        }
+        if (!passRegex.test(password)) {
+          alert('Password must be at least 6 characters');
+          return false;
+        }
+        if (password !== confirm) {
+          alert('Passwords do not match');
+          return false;
+        }
+        return true;
+      }
+    </script>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Homemade Pickles & Snacks. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
