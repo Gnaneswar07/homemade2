@@ -244,9 +244,53 @@ def checkout():
             flash(f'Checkout failed: {str(e)}', 'error')
     return render_template('checkout.html')
 
-@app.route('/order')
+@app.route('/order', methods=['GET', 'POST'])
 @login_required
 def order():
+    if request.method == 'POST':
+        try:
+            name = request.form['name']
+            email = request.form['email']
+            phone = request.form['phone']
+            address = request.form['address']
+            city = request.form.get('city', '')
+            pincode = request.form.get('pincode', '')
+            item = request.form['item']
+            quantity = int(request.form['quantity'])
+            notes = request.form.get('notes', '')
+            order_id = str(uuid.uuid4())
+            timestamp = datetime.utcnow().isoformat()
+
+            # Save to DynamoDB with full order details
+            order_table.put_item(Item={
+                'order_id': order_id,
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'address': address,
+                'city': city,
+                'pincode': pincode,
+                'item': item,
+                'quantity': quantity,
+                'notes': notes,
+                'timestamp': timestamp,
+                'status': 'pending',
+                'total_amount': quantity * 100,  # Sample pricing
+                'source': 'order_form'
+            })
+
+            # Send email notifications
+            customer_message = f"Dear {name},\n\nYour order has been placed successfully!\n\nOrder ID: {order_id}\nItem: {item}\nQuantity: {quantity}\n\nWe'll contact you soon for delivery details.\n\nThank you for choosing Homemade Pickles & Snacks!"
+            admin_message = f"New Order Received!\n\nOrder ID: {order_id}\nCustomer: {name}\nEmail: {email}\nPhone: {phone}\nItem: {item}\nQuantity: {quantity}\nAddress: {address}, {city} - {pincode}\nNotes: {notes}"
+            
+            send_email_notification(email, 'Order Confirmation - Homemade Pickles & Snacks', customer_message)
+            send_email_notification(ADMIN_EMAIL, f'New Order - {order_id}', admin_message)
+
+            session['last_order_id'] = order_id
+            return redirect(url_for('order_success'))
+        except Exception as e:
+            flash(f'Order processing failed: {str(e)}', 'error')
+            return render_template('order.html')
     return render_template('order.html')
 
 @app.route('/snackes')
@@ -282,13 +326,53 @@ def aws_info():
             account_id = 'Unknown'
             role_arn = 'No role attached'
         
+        # Test DynamoDB connectivity
+        try:
+            user_table.describe_table()
+            dynamodb_status = 'Connected'
+        except:
+            dynamodb_status = 'Error'
+            
+        # Test SNS connectivity
+        try:
+            if SNS_TOPIC_ARN:
+                sns.get_topic_attributes(TopicArn=SNS_TOPIC_ARN)
+                sns_status = 'Connected'
+            else:
+                sns_status = 'Not Configured'
+        except:
+            sns_status = 'Error'
+        
         info = {
             'instance_id': instance_id,
             'account_id': account_id,
             'role_arn': role_arn,
-            'region': AWS_REGION
+            'region': AWS_REGION,
+            'dynamodb_status': dynamodb_status,
+            'sns_status': sns_status,
+            'tables': ['PickleUsers', 'PickleOrders', 'PickleContacts']
         }
         return jsonify(info)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for load balancer"""
+    try:
+        # Test database connectivity
+        user_table.describe_table()
+        return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()})
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+
+@app.route('/test-email')
+def test_email():
+    """Test email functionality"""
+    try:
+        test_message = f"Test email sent at {datetime.utcnow().isoformat()}"
+        result = send_email_notification(ADMIN_EMAIL, 'Test Email', test_message)
+        return jsonify({'email_sent': result, 'timestamp': datetime.utcnow().isoformat()})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
